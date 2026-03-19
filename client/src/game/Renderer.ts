@@ -1,4 +1,4 @@
-import { BoardGrid, TetrominoType, CellColor } from '../types';
+import { BoardGrid, TetrominoType } from '../types';
 import { BOARD_ROWS, BOARD_COLS, CELL_SIZE, TETROMINO_COLORS, TETROMINO_SHAPES } from './constants';
 import { Tetromino } from './Tetromino';
 
@@ -14,7 +14,7 @@ export class Renderer {
   }
 
   clear(): void {
-    this.ctx.fillStyle = '#1a1a2e';
+    this.ctx.fillStyle = '#050818';
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.drawGridLines();
   }
@@ -34,6 +34,10 @@ export class Renderer {
     const shape = piece.getShape();
     const { row, col } = piece.position;
 
+    this.ctx.save();
+    this.ctx.shadowColor = piece.color;
+    this.ctx.shadowBlur = 12;
+
     for (let r = 0; r < shape.length; r++) {
       for (let c = 0; c < shape[r].length; c++) {
         if (shape[r][c] === 0) continue;
@@ -42,6 +46,8 @@ export class Renderer {
         this.drawCell(boardRow, col + c, piece.color);
       }
     }
+
+    this.ctx.restore();
   }
 
   drawGhost(piece: Tetromino, ghostRow: number): void {
@@ -58,13 +64,18 @@ export class Renderer {
   }
 
   drawOverlay(text: string): void {
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    this.ctx.fillStyle = 'rgba(5, 8, 24, 0.75)';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 24px monospace';
+
+    this.ctx.save();
+    this.ctx.shadowColor = '#00f0ff';
+    this.ctx.shadowBlur = 24;
+    this.ctx.fillStyle = '#00f0ff';
+    this.ctx.font = 'bold 28px "Courier New", monospace';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(text, this.width / 2, this.height / 2);
+    this.ctx.restore();
   }
 
   static drawMiniPiece(
@@ -82,43 +93,60 @@ export class Renderer {
     const offsetX = (ctx.canvas.width - cols * cellSize) / 2;
     const offsetY = (ctx.canvas.height - rows * cellSize) / 2;
 
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (shape[r][c] === 0) continue;
         Renderer.drawStaticCell(ctx, offsetY + r * cellSize, offsetX + c * cellSize, cellSize, color);
       }
     }
+
+    ctx.restore();
   }
 
   private drawCell(row: number, col: number, color: string): void {
     const x = col * CELL_SIZE;
     const y = row * CELL_SIZE;
+    const s = CELL_SIZE;
 
+    // Main fill
     this.ctx.fillStyle = color;
-    this.ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+    this.ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
 
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    this.ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, 3);
-    this.ctx.fillRect(x + 1, y + 1, 3, CELL_SIZE - 2);
+    // Bright top-left bevel
+    this.ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    this.ctx.fillRect(x + 1, y + 1, s - 2, 3);
+    this.ctx.fillRect(x + 1, y + 1, 3, s - 2);
 
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    this.ctx.fillRect(x + 1, y + CELL_SIZE - 4, CELL_SIZE - 2, 3);
-    this.ctx.fillRect(x + CELL_SIZE - 4, y + 1, 3, CELL_SIZE - 2);
+    // Dark bottom-right bevel
+    this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    this.ctx.fillRect(x + 1, y + s - 4, s - 2, 3);
+    this.ctx.fillRect(x + s - 4, y + 1, 3, s - 2);
+
+    // Inner highlight
+    this.ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    this.ctx.fillRect(x + 4, y + 4, s - 10, s - 10);
   }
 
   private drawGhostCell(row: number, col: number, color: string): void {
     const x = col * CELL_SIZE;
     const y = row * CELL_SIZE;
 
+    this.ctx.save();
     this.ctx.strokeStyle = color;
-    this.ctx.lineWidth = 2;
-    this.ctx.globalAlpha = 0.3;
+    this.ctx.lineWidth = 1.5;
+    this.ctx.globalAlpha = 0.35;
+    this.ctx.shadowColor = color;
+    this.ctx.shadowBlur = 6;
     this.ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-    this.ctx.globalAlpha = 1;
+    this.ctx.restore();
   }
 
   private drawGridLines(): void {
-    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    this.ctx.strokeStyle = 'rgba(0, 200, 255, 0.04)';
     this.ctx.lineWidth = 1;
 
     for (let r = 0; r <= BOARD_ROWS; r++) {
@@ -145,5 +173,8 @@ export class Renderer {
   ): void {
     ctx.fillStyle = color;
     ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(x + 1, y + 1, size - 2, 2);
+    ctx.fillRect(x + 1, y + 1, 2, size - 2);
   }
 }

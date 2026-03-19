@@ -8,8 +8,8 @@ interface PiecePreviewProps {
   pieces: TetrominoType[];
 }
 
-const MINI_CELL = 18;
-const CANVAS_SIZE = 80;
+const MINI_CELL = 16;
+const CANVAS_SIZE = 70;
 
 export function PiecePreview({ title, pieces }: PiecePreviewProps): JSX.Element {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
@@ -28,17 +28,21 @@ export function PiecePreview({ title, pieces }: PiecePreviewProps): JSX.Element 
     <div className={styles.container}>
       <span className={styles.title}>{title}</span>
       <div className={styles.pieces}>
-        {pieces.map((_, idx) => (
-          <canvas
-            key={idx}
-            ref={(el) => {
-              canvasRefs.current[idx] = el;
-            }}
-            width={CANVAS_SIZE}
-            height={CANVAS_SIZE}
-            className={styles.canvas}
-          />
-        ))}
+        {pieces.length === 0 ? (
+          <canvas width={CANVAS_SIZE} height={CANVAS_SIZE} className={styles.canvas} />
+        ) : (
+          pieces.map((_, idx) => (
+            <canvas
+              key={idx}
+              ref={(el) => {
+                canvasRefs.current[idx] = el;
+              }}
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
+              className={styles.canvas}
+            />
+          ))
+        )}
       </div>
     </div>
   );

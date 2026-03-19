@@ -26,7 +26,21 @@ export interface GameSnapshot {
   nextPieces: TetrominoType[];
   stats: GameStats;
   state: GameState;
+  lastEvent: GameEvent;
 }
+
+export type GameEvent =
+  | 'none'
+  | 'move'
+  | 'rotate'
+  | 'hardDrop'
+  | 'lock'
+  | 'lineClear1'
+  | 'lineClear2'
+  | 'lineClear3'
+  | 'lineClear4'
+  | 'levelUp'
+  | 'gameOver';
 
 export type GameEventCallback = (snapshot: GameSnapshot) => void;
 
@@ -40,6 +54,7 @@ export class GameEngine {
   private stats: GameStats = { score: 0, level: 1, linesCleared: 0 };
   private dropTimer = 0;
   private onUpdate: GameEventCallback | null = null;
+  private lastEvent: GameEvent = 'none';
 
   constructor() {
     this.board = new Board();
@@ -59,6 +74,7 @@ export class GameEngine {
     this.stats = { score: 0, level: 1, linesCleared: 0 };
     this.dropTimer = 0;
     this.state = GameState.Playing;
+    this.lastEvent = 'none';
     this.spawnPiece();
     this.emitUpdate();
   }
@@ -102,6 +118,7 @@ export class GameEngine {
       nextPieces: this.pieceBag.peek(3),
       stats: { ...this.stats },
       state: this.state,
+      lastEvent: this.lastEvent,
     };
   }
 
@@ -121,21 +138,31 @@ export class GameEngine {
     if (this.state !== GameState.Playing || !this.currentPiece) return;
 
     const piece = this.currentPiece;
+    let moved = false;
 
     switch (direction) {
       case Direction.Left:
         piece.position.col--;
-        if (!this.board.isValidPosition(piece)) piece.position.col++;
+        if (!this.board.isValidPosition(piece)) {
+          piece.position.col++;
+        } else {
+          moved = true;
+        }
         break;
       case Direction.Right:
         piece.position.col++;
-        if (!this.board.isValidPosition(piece)) piece.position.col--;
+        if (!this.board.isValidPosition(piece)) {
+          piece.position.col--;
+        } else {
+          moved = true;
+        }
         break;
       case Direction.Down:
         this.moveDown();
-        break;
+        return;
     }
 
+    this.lastEvent = moved ? 'move' : 'none';
     this.emitUpdate();
   }
 
@@ -145,7 +172,7 @@ export class GameEngine {
     const piece = this.currentPiece;
     const { previousState, newState } = piece.rotate(direction);
 
-    if (previousState === newState) return; // O-piece
+    if (previousState === newState) return;
 
     const kicks = this.getWallKicks(piece, previousState, newState);
 
@@ -154,6 +181,7 @@ export class GameEngine {
       piece.position.row -= rowOffset;
 
       if (this.board.isValidPosition(piece)) {
+        this.lastEvent = 'rotate';
         this.emitUpdate();
         return;
       }
@@ -163,6 +191,7 @@ export class GameEngine {
     }
 
     piece.undoRotation(direction);
+    this.lastEvent = 'none';
     this.emitUpdate();
   }
 
@@ -173,6 +202,7 @@ export class GameEngine {
     const cellsDropped = ghostRow - this.currentPiece.position.row;
     this.stats.score += cellsDropped * 2;
     this.currentPiece.position.row = ghostRow;
+    this.lastEvent = 'hardDrop';
     this.lockAndAdvance();
   }
 
@@ -195,6 +225,7 @@ export class GameEngine {
     }
 
     this.holdUsed = true;
+    this.lastEvent = 'none';
     this.emitUpdate();
   }
 
@@ -205,6 +236,7 @@ export class GameEngine {
 
     if (!this.board.isValidPosition(this.currentPiece)) {
       this.currentPiece.position.row--;
+      if (this.lastEvent !== 'hardDrop') this.lastEvent = 'lock';
       this.lockAndAdvance();
       return;
     }
@@ -215,9 +247,22 @@ export class GameEngine {
   private lockAndAdvance(): void {
     if (!this.currentPiece) return;
 
+    const prevLevel = this.stats.level;
     this.board.lockPiece(this.currentPiece);
     const linesCleared = this.board.clearFullLines();
     this.updateStats(linesCleared);
+
+    if (linesCleared > 0) {
+      const eventMap: GameEvent[] = ['none', 'lineClear1', 'lineClear2', 'lineClear3', 'lineClear4'];
+      this.lastEvent = eventMap[Math.min(linesCleared, 4)];
+    } else if (this.stats.level > prevLevel) {
+      this.lastEvent = 'levelUp';
+    }
+
+    if (this.stats.level > prevLevel && linesCleared === 0) {
+      this.lastEvent = 'levelUp';
+    }
+
     this.holdUsed = false;
     this.dropTimer = 0;
     this.spawnPiece();
@@ -230,14 +275,19 @@ export class GameEngine {
     if (!this.board.isValidPosition(this.currentPiece)) {
       this.state = GameState.GameOver;
       this.currentPiece = null;
+      this.lastEvent = 'gameOver';
     }
   }
 
   private updateStats(linesCleared: number): void {
     if (linesCleared > 0 && linesCleared <= 4) {
+      const prevLevel = this.stats.level;
       this.stats.score += LINE_SCORES[linesCleared] * this.stats.level;
       this.stats.linesCleared += linesCleared;
       this.stats.level = Math.floor(this.stats.linesCleared / LINES_PER_LEVEL) + 1;
+      if (this.stats.level > prevLevel) {
+        this.lastEvent = 'levelUp';
+      }
     }
   }
 
@@ -259,6 +309,9 @@ export class GameEngine {
   private emitUpdate(): void {
     if (this.onUpdate) {
       this.onUpdate(this.getSnapshot());
+    }
+    if (this.lastEvent !== 'gameOver') {
+      this.lastEvent = 'none';
     }
   }
 }

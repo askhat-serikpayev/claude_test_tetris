@@ -49,7 +49,6 @@ export function GameBoard({ engine, onGameOver }: GameBoardProps): JSX.Element {
   );
 
   useGameLoop(tick, isPlaying);
-
   useKeyboard(engine);
 
   useEffect(() => {
@@ -76,7 +75,12 @@ export function GameBoard({ engine, onGameOver }: GameBoardProps): JSX.Element {
       ref={canvasRef}
       width={BOARD_COLS * CELL_SIZE}
       height={BOARD_ROWS * CELL_SIZE}
-      style={{ border: '2px solid #333', borderRadius: '4px' }}
+      style={{
+        display: 'block',
+        borderRadius: '6px',
+        border: '1px solid rgba(0, 240, 255, 0.25)',
+        boxShadow: '0 0 30px rgba(0, 240, 255, 0.15), 0 0 60px rgba(120, 0, 255, 0.1), inset 0 0 30px rgba(0, 0, 30, 0.5)',
+      }}
     />
   );
 }
