@@ -1,0 +1,101 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: 300px;
+}
+
+.title {
+  margin: 0;
+  color: #f44;
+  font-size: 28px;
+  text-transform: uppercase;
+}
+
+.statsRow {
+  display: flex;
+  gap: 20px;
+  color: #ccc;
+  font-size: 16px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #0a0f1e;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #00f0f0;
+}
+
+.submitBtn {
+  background: #00f0f0;
+  color: #000;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.closeBtn {
+  background: none;
+  color: #888;
+  border: 1px solid #333;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.closeBtn:hover {
+  color: #fff;
+  border-color: #555;
+}
+
+.error {
+  color: #f44;
+  font-size: 14px;
+  margin: 0;
+}
+
+.success {
+  color: #0f0;
+  font-size: 16px;
+  margin: 0;
+}
